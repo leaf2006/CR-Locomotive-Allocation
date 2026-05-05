@@ -49,5 +49,19 @@
         "HXN5",
         "HXN5B",
         "ND5"
+    ],
+    "special_fetch_group_A": [
+        "FXD1BA",
+        "FXD2BA",
+        "FXN3B",
+        "FXN3C",
+        "FXN5C"
+    ],
+    "special_fetch_group_B": [
+        "http://www.xiaguanzhan.com/Pro.asp?classId=102",
+        "http://www.xiaguanzhan.com/Pro.asp?classid=95"
+    ],
+    "special_fetch_DF11Z": [
+        "http://www.xiaguanzhan.com/df11z.asp"
     ]
 }
