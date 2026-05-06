@@ -3,3 +3,5 @@ backend/.venv
 backend/uv.lock
 backend/test.py
 backend/xiaguanzhan.html
+backend/CLAUDE.md
+backend/test
