@@ -33,3 +33,18 @@ def normal_format_data(response_text :str,fetch_status :str, raw_result :list, d
                 "design_speed": ""
             })
             print(f"{train_series_number}已录入，配属：{train_allocation}")
+
+def get_webfetch_data(response_text :str, fetch_status :str, raw_url :str, store_dict :list, raw_result :list, detail_fetch_urls :list):
+    """获取当前组的信息总量、总页数，顺便获取当页的信息"""
+    if fetch_status == "normal_fetch": # 获取总页数，以制定所有需要fetch的url
+        total_page_match = re.search(r"\[页次<Font color='Red'>1</Font>/(.*?)页\]", response_text)
+        if total_page_match:
+            total_page = total_page_match.group(1)
+
+        for i in range(1,int(total_page) +1):
+            url = f"{raw_url}?Page={i}"
+            store_dict['normal_fetch'].append(url)
+        
+        normal_format_data(response_text, "normal_fetch", raw_result, detail_fetch_urls)
+    elif fetch_status == "special_fetch_group_A":
+        pass
