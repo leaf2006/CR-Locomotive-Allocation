@@ -1,6 +1,6 @@
 import asyncio
 import orjson
-from fetch import index_first_web_fetch
+from fetch import index_first_web_fetch, web_fetch
 # from utils import result_data_initialization
 from pathlib import Path
 async def main():
@@ -13,10 +13,16 @@ async def main():
     with open(fetch_path, "rb") as fetch_f:
         content = fetch_f.read()
         fetch_url = orjson.loads(content)
-    first_fetch_result, detail_fetch_urls = await index_first_web_fetch(fetch_url)
-    print("首次数据获取已完成，正在进行写入...")
+    first_fetch_result, store_dict = await index_first_web_fetch(fetch_url)
+    print(store_dict)
+
+    print("等待三秒...")
+    await asyncio.sleep(3)
+    
+    raw_result = await web_fetch(store_dict, first_fetch_result)
+    print("数据获取已完成，正在进行写入...")
     write_first_fetch_result = orjson.dumps(
-        first_fetch_result,
+        raw_result,
         option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
     )
     with open(raw_result_path, 'wb') as result_f:
