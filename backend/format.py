@@ -13,11 +13,15 @@ def normal_format_data(response_text :str,fetch_status :str, raw_result :list):
         print(normal_page_match)
         for detail in normal_page_match:
             # pro_id = detail[0]
-            raw_train_detail = detail[1]
+            raw_train_detail = detail[1] # TODO 当录入GKD等车型时， 这边会出现错位
             raw_train_detail_split = raw_train_detail.split(' ') # 分割信息，只提取[1]：车型车号（全英文），[2]配属
-            if len(raw_train_detail_split) < 3:
-                train_series_number = raw_train_detail_split[1]
-                train_allocation = "暂无配属"
+            if len(raw_train_detail_split) < 3 or "-" not in raw_train_detail_split[1]:
+                if "-" in raw_train_detail_split[0] and "-" not in raw_train_detail_split[1]:
+                    train_series_number = raw_train_detail_split[0]
+                    train_allocation = raw_train_detail_split[1] # TODO 傻逼判断法，需要后续修改
+                else:
+                    train_series_number = raw_train_detail_split[1]
+                    train_allocation = "暂无配属"
             else:
                 train_series_number = raw_train_detail_split[1]
                 train_allocation = raw_train_detail_split[2] # 配属
