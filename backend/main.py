@@ -1,8 +1,8 @@
 import asyncio
 import orjson
 from fetch import first_web_fetch, web_fetch
-# from utils import result_data_initialization
 from pathlib import Path
+from utils import utils
 async def main():
     print("开始获取下关站所有数据...\n")
     current_dir = Path(__file__).parent
@@ -20,7 +20,9 @@ async def main():
     await asyncio.sleep(3)
     
     raw_result = await web_fetch(store_dict, first_fetch_result)
-    print("数据获取已完成，正在进行写入...")
+    print("数据获取已完成，正在进行去重...")
+    raw_result = utils.remove_duplicate_data(raw_result)
+    print("去重完成，正在进行写入...")
     write_first_fetch_result = orjson.dumps(
         raw_result,
         option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
