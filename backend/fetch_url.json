@@ -2,6 +2,7 @@
     "xiaguanzhan_url": "http://www.xiaguanzhan.com/",
     "normal_fetch": [
         "HXD1",
+        "HXD1-A",
         "HXD1B",
         "HXD1C",
         "HXD1D",
@@ -13,6 +14,7 @@
         "HXD3C",
         "HXD3CA",
         "HXD3D",
+        "CEA1A1",
         "SS3",
         "SS3B",
         "SS4",
@@ -49,6 +51,7 @@
         "HXN3B",
         "HXN5",
         "HXN5B",
+        "FXN5C",
         "ND5",
         "GK1",
         "GK1C",
@@ -57,18 +60,12 @@
         "GKD1A",
         "GKD2"
     ],
-    "special_fetch_group_A": [
-        "FXD1BA",
-        "FXD2BA",
-        "FXN3B",
-        "FXN3C",
-        "FXN5C"
-    ],
-    "special_fetch_group_B": [
-        "http://www.xiaguanzhan.com/Pro.asp?classId=102",
-        "http://www.xiaguanzhan.com/Pro.asp?classid=95"
-    ],
-    "special_fetch_DF11Z": [
-        "http://www.xiaguanzhan.com/df11z.asp"
-    ]
+    "special_fetch": {
+        "DF11Z": "http://www.xiaguanzhan.com/df11z.asp",
+        "HXN6": "http://www.xiaguanzhan.com/Pro.asp?classid=110",
+        "FXD1BA": "http://www.xiaguanzhan.com/Pro.asp?classid=466",
+        "FXD2BA": "http://www.xiaguanzhan.com/Pro.asp?classid=467",
+        "FXN3C": "http://www.xiaguanzhan.com/Pro.asp?classid=455",
+        "FXN3B": "http://www.xiaguanzhan.com/Pro.asp?classid=435"
+    }
 }

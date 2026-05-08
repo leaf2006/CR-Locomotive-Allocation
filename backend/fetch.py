@@ -2,30 +2,25 @@ import orjson
 import asyncio
 from pathlib import Path
 import httpx
-from format import get_webfetch_data, normal_format_data
+from format import get_webfetch_data, format_data
 from utils import utils
 
 # def fetch_divide(raw_data :list, store :list) -> list:
 #     for i in range(0, len(raw_data), 10):
 #         batch = raw_data[i:i+10]
 #         store.append(batch)
-async def _first_normal_data_processing(
-        client: httpx.AsyncClient,
-        url: str ,
-        store_dict :list,
-        first_raw_result :list,
-        # semaphore,
-) -> str:
-    # async with semaphore:
-    index_response = await client.post(url)
-    index_response.encoding = "gb2312"
-    # detail_fetch_urls = get_webfetch_data(index_response.text, "normal_fetch", url, store_dict, first_raw_result, detail_fetch_urls)
-    get_webfetch_data(index_response.text, "normal_fetch", url, store_dict, first_raw_result)
-
-async def _normal_data_processing(client: httpx.AsyncClient, url: str, raw_result :list):
+async def _first_normal_data_processing(client: httpx.AsyncClient, url: str, store_dict :list, first_raw_result :list) -> str:
+    """发起首次normal_fetch的网络请求，并把请求结果引入数据处理部分"""
     response = await client.post(url)
     response.encoding = "gb2312"
-    normal_format_data(response.text, "normal_fetch", raw_result)
+    # detail_fetch_urls = get_webfetch_data(index_response.text, "normal_fetch", url, store_dict, first_raw_result, detail_fetch_urls)
+    get_webfetch_data(response.text, "normal_fetch", url, store_dict, first_raw_result)
+
+async def _normal_data_processing(client: httpx.AsyncClient, url: str, raw_result :list):
+    """发起后续normal_fetch的网络请求，并把结果引入数据处理部分"""
+    response = await client.post(url)
+    response.encoding = "gb2312"
+    format_data(response.text, "normal_fetch", raw_result)
 
 # async def _train_detail_processing(
 #         client: httpx.AsyncClient,
@@ -35,26 +30,30 @@ async def _normal_data_processing(client: httpx.AsyncClient, url: str, raw_resul
 #     response = await client.post(url)
 #     response.encoding = "gb2312"
 #     get_detail_data(response.text, first_raw_result)
-async def _special_fetch_groupA_data_processing(client: httpx.AsyncClient, url: str, store_dict :list) -> str:
+async def _first_special_data_processing(client: httpx.AsyncClient, url: str, store_dict :list, first_raw_result :list) -> str:
+    """发起首次special_fetch的网络请求，并把请求结果引入数据处理部分"""
     response = await client.post(url)
     response.encoding = "gb2312"
-    get_webfetch_data(response.text, "special_fetch_group_A", url, store_dict)
-    
+    get_webfetch_data(response.text, "special_fetch", url, store_dict, first_raw_result)
 
-async def index_first_web_fetch(fetch_url) -> list[str]:
+async def _special_data_processing(client: httpx.AsyncClient, url: str, raw_result :list):
+    """发起后续special_fetch的网络请求，并把结果引入数据处理部分"""
+    response = await client.post(url)
+    response.encoding = "gb2312"
+    format_data(response.text, "special_fetch", raw_result)
+async def first_web_fetch(fetch_url) -> list[str]:
+    """首次网络请求"""
     raw_url = fetch_url['xiaguanzhan_url']
     normal_fetch = fetch_url["normal_fetch"]
-    special_fetch_group_A = fetch_url['special_fetch_group_A']
-    special_fetch_group_B = fetch_url['special_fetch_group_B']
-    special_fetch_DF11Z = fetch_url['special_fetch_DF11Z']
+    special_fetch = fetch_url["special_fetch"].values()
     # semaphore = asyncio.Semaphore(10)
     store_dict = {
         "normal_fetch":[],
-        "special_fetch_group_A":[],
-        "special_fetch_group_B":[],
-        "special_fetch_group_DF11Z":[]
+        "special_fetch":[]
     }
     first_raw_result = {}
+    
+    # normal_fetch
     async with httpx.AsyncClient(timeout=30.0) as client:
         # tasks = [
         #     _fetch_one(client, f"{raw_url}{trains}-3.asp")
@@ -77,7 +76,22 @@ async def index_first_web_fetch(fetch_url) -> list[str]:
                 tasks.append(coro)
             await asyncio.gather(*tasks)
             await asyncio.sleep(1)  # 每批之间等 1 秒
+    
+    print("等待三秒...")
+    await asyncio.sleep(3)
 
+    # special_fetch
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # batches = []
+        # 因为没有几组，所以可以一起放进去请求，不需要分组
+        print(special_fetch)
+        tasks = []
+        for url in special_fetch:
+            coro = _first_special_data_processing(client, url, store_dict, first_raw_result)
+            tasks.append(coro)
+        await asyncio.gather(*tasks)
+        await asyncio.sleep(1)
+        
         # await asyncio.gather(*tasks) # 异步并发执行
     # async with httpx.AsyncClient(timeout=30.0) as client:
     #     batches = []
@@ -93,8 +107,12 @@ async def index_first_web_fetch(fetch_url) -> list[str]:
     # return list(data)
     return first_raw_result, store_dict
 
-async def web_fetch(url_dict: list, raw_result :list) -> list[str]:
+async def web_fetch(url_dict: list, raw_result :list) -> list[str]: # url_dict对应上面的store_dict
+    """后续常规网络请求"""
     normal_url_dict = url_dict['normal_fetch']
+    special_url_dict = url_dict['special_fetch']
+
+    # normal_fetch
     async with httpx.AsyncClient(timeout=30.0) as client:
         batches = []
         utils.fetch_divide(normal_url_dict, batches)
@@ -102,6 +120,21 @@ async def web_fetch(url_dict: list, raw_result :list) -> list[str]:
             tasks = []
             for url in batch:
                 coro = _normal_data_processing(client, url, raw_result)
+                tasks.append(coro)
+            await asyncio.gather(*tasks)
+            await asyncio.sleep(1)
+
+    print("等待三秒...")
+    await asyncio.sleep(3)   
+
+    # special_fetch
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        batches = []
+        utils.fetch_divide(special_url_dict, batches)
+        for batch in batches:
+            tasks = []
+            for url in batch:
+                coro = _special_data_processing(client, url, raw_result)
                 tasks.append(coro)
             await asyncio.gather(*tasks)
             await asyncio.sleep(1)

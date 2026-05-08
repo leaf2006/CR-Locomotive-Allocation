@@ -1,6 +1,6 @@
 import asyncio
 import orjson
-from fetch import index_first_web_fetch, web_fetch
+from fetch import first_web_fetch, web_fetch
 # from utils import result_data_initialization
 from pathlib import Path
 async def main():
@@ -13,7 +13,7 @@ async def main():
     with open(fetch_path, "rb") as fetch_f:
         content = fetch_f.read()
         fetch_url = orjson.loads(content)
-    first_fetch_result, store_dict = await index_first_web_fetch(fetch_url)
+    first_fetch_result, store_dict = await first_web_fetch(fetch_url) # 首次网络请求，将会获取后续所有网络请求所需的url
     print(store_dict)
 
     print("等待三秒...")
