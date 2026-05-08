@@ -5,10 +5,6 @@ import httpx
 from format import get_webfetch_data, format_data
 from utils import utils
 
-# def fetch_divide(raw_data :list, store :list) -> list:
-#     for i in range(0, len(raw_data), 10):
-#         batch = raw_data[i:i+10]
-#         store.append(batch)
 async def _first_normal_data_processing(client: httpx.AsyncClient, url: str, store_dict :list, first_raw_result :list) -> str:
     """发起首次normal_fetch的网络请求，并把请求结果引入数据处理部分"""
     response = await client.post(url)
@@ -22,14 +18,6 @@ async def _normal_data_processing(client: httpx.AsyncClient, url: str, raw_resul
     response.encoding = "gb2312"
     format_data(response.text, "normal_fetch", raw_result)
 
-# async def _train_detail_processing(
-#         client: httpx.AsyncClient,
-#         url :str,
-#         first_raw_result :list
-# ):
-#     response = await client.post(url)
-#     response.encoding = "gb2312"
-#     get_detail_data(response.text, first_raw_result)
 async def _first_special_data_processing(client: httpx.AsyncClient, url: str, store_dict :list, first_raw_result :list) -> str:
     """发起首次special_fetch的网络请求，并把请求结果引入数据处理部分"""
     response = await client.post(url)
@@ -55,20 +43,9 @@ async def first_web_fetch(fetch_url) -> list[str]:
     
     # normal_fetch
     async with httpx.AsyncClient(timeout=30.0) as client:
-        # tasks = [
-        #     _fetch_one(client, f"{raw_url}{trains}-3.asp")
-        #     for trains in normal_fetch
-        # ]
         batches = [] # 分组处理
+        utils.fetch_divide(normal_fetch, batches) 
 
-        utils.fetch_divide(normal_fetch, batches)
-
-        # tasks = []
-
-        # for batch in batches:
-        #     for trains in batch:
-        #         coro = _first_normal_data_processing(client, f"{raw_url}{trains}-3.asp", store_dict, first_raw_result, detail_fetch_urls, semaphore)
-        #         tasks.append(coro)  
         for batch in batches:
             tasks = []
             for trains in batch:
@@ -92,19 +69,6 @@ async def first_web_fetch(fetch_url) -> list[str]:
         await asyncio.gather(*tasks)
         await asyncio.sleep(1)
         
-        # await asyncio.gather(*tasks) # 异步并发执行
-    # async with httpx.AsyncClient(timeout=30.0) as client:
-    #     batches = []
-    #     utils.fetch_divide(special_fetch_group_A, batches)
-
-    #     tasks = []
-    #     for batch in batches:
-    #         for trains in batch:
-    #             coro = _special_fetch_groupA_data_processing(client, f"{raw_url}soso.asp?keyword={trains}", store_dict)
-    #             tasks.append(coro)
-    #     await asyncio.gather(*tasks)
-
-    # return list(data)
     return first_raw_result, store_dict
 
 async def web_fetch(url_dict: list, raw_result :list) -> list[str]: # url_dict对应上面的store_dict
