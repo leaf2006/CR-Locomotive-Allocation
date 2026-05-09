@@ -2,7 +2,7 @@ import asyncio
 import orjson
 from fetch import first_web_fetch, web_fetch
 from pathlib import Path
-from utils import utils
+from utils import utils, run_with_retry
 from extra_process import extra_process
 async def main():
     print("开始获取下关站所有数据...\n")
@@ -14,13 +14,14 @@ async def main():
     with open(fetch_path, "rb") as fetch_f:
         content = fetch_f.read()
         fetch_url = orjson.loads(content)
-    first_fetch_result, store_dict = await first_web_fetch(fetch_url) # 首次网络请求，将会获取后续所有网络请求所需的url
+    # 使用重试包装器，遇到临时网络错误时重新运行整个fetch组
+    first_fetch_result, store_dict = await run_with_retry(lambda: first_web_fetch(fetch_url))
     print(store_dict)
 
     print("等待三秒...")
     await asyncio.sleep(3)
     
-    raw_result = await web_fetch(store_dict, first_fetch_result)
+    raw_result = await run_with_retry(lambda: web_fetch(store_dict, first_fetch_result))
     print("数据获取已完成，正在进行去重...")
     raw_result = utils.remove_duplicate_data(raw_result)
     raw_result = extra_process(raw_result)

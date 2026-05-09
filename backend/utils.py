@@ -1,6 +1,8 @@
 from pathlib import Path
 import orjson
 import re
+import httpx
+import asyncio
 
 # def result_data_initialization():
 #     current_dir = Path(__file__).parent
@@ -27,3 +29,14 @@ class utils:
                     seen[item_id] = item
             raw_result[key] = list(seen.values())
         return raw_result
+
+async def run_with_retry(coro_factory, *, max_retries=3, base_delay=2.0):
+    for attempt in range(1, max_retries + 1):
+        try:
+            return await coro_factory()
+        except (httpx.ReadTimeout, httpx.RemoteProtocolError) as exc:
+            if attempt == max_retries:
+                raise
+            wait = base_delay * (2 ** (attempt - 1))
+            print(f"fetch failed: {exc}. retry in {wait}s (attempt {attempt}/{max_retries})")
+            await asyncio.sleep(wait)
