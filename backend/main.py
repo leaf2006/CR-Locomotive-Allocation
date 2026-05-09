@@ -3,6 +3,7 @@ import orjson
 from fetch import first_web_fetch, web_fetch
 from pathlib import Path
 from utils import utils
+from extra_process import extra_process
 async def main():
     print("开始获取下关站所有数据...\n")
     current_dir = Path(__file__).parent
@@ -22,6 +23,7 @@ async def main():
     raw_result = await web_fetch(store_dict, first_fetch_result)
     print("数据获取已完成，正在进行去重...")
     raw_result = utils.remove_duplicate_data(raw_result)
+    raw_result = extra_process(raw_result)
     print("去重完成，正在进行写入...")
     write_first_fetch_result = orjson.dumps(
         raw_result,
