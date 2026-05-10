@@ -31,6 +31,7 @@ class utils:
         return raw_result
 
 async def run_with_retry(coro_factory, *, max_retries=3, base_delay=2.0):
+    """当出现网络问题时，程序自动进行三次重连"""
     for attempt in range(1, max_retries + 1):
         try:
             return await coro_factory()
