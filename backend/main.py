@@ -18,21 +18,22 @@ async def main():
     first_fetch_result, store_dict = await run_with_retry(lambda: first_web_fetch(fetch_url))
     print(store_dict)
 
-    print("等待三秒...")
+    print("[SUCCESS]首次请求均已完成")
+    print("[INFO]等待冷却三秒，进行普通网络请求...")
     await asyncio.sleep(3)
     
     raw_result = await run_with_retry(lambda: web_fetch(store_dict, first_fetch_result))
-    print("数据获取已完成，正在进行去重...")
+    print("[INFO]数据获取已完成，正在进行去重...")
     raw_result = utils.remove_duplicate_data(raw_result)
     raw_result = extra_process(raw_result)
-    print("去重完成，正在进行写入...")
+    print("[INFO]去重完成，正在进行写入...")
     write_first_fetch_result = orjson.dumps(
         raw_result,
         option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
     )
     with open(raw_result_path, 'wb') as result_f:
         result_f.write(write_first_fetch_result)
-    print("写入已完成！")
+    print("[SUCCESS]写入已完成！程序结束")
 
 if __name__ == "__main__":
     asyncio.run(main())
