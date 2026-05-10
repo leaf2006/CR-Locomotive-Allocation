@@ -1,4 +1,4 @@
-def extra_process(raw_data: dict) -> list:
+def extra_process(raw_data: dict) -> dict:
     """对于数据的附加的个性化处理
 
     1. 将"工矿1C"数据的id从"工矿1C-XXXX"改为"GK1C-XXXX"，并合并到GK1C中
@@ -16,20 +16,19 @@ def extra_process(raw_data: dict) -> list:
         if "车号未知" in key:
             unknown_key = key
 
-    # 将工矿1C数据合并到GK1C
-    if gongkuang_key and gongkuang_key in raw_data:
-        gongkuang_items = raw_data.pop(gongkuang_key)
-        for item in gongkuang_items:
-            item["id"] = "GK1C-" + item["id"].split("-")[-1]
-        raw_data.setdefault(gk1c_key, []).extend(gongkuang_items)
+    result = {}
+    for key, items in raw_data.items():
+        if key == unknown_key or key == gongkuang_key:
+            continue
+        if key == gk1c_key:
+            merged = list(items)
+            if gongkuang_key and gongkuang_key in raw_data:
+                for item in raw_data[gongkuang_key]:
+                    new_item = dict(item)
+                    new_item["id"] = "GK1C-" + new_item["id"].split("-")[-1]
+                    merged.append(new_item)
+            result[key] = merged
+        else:
+            result[key] = list(items)
 
-    # 删除车号未知
-    if unknown_key and unknown_key in raw_data:
-        raw_data.pop(unknown_key)
-
-    # 展平为列表
-    result = []
-    for items in raw_data.values():
-        result.extend(items)
     return result
-# 让Agent写的，懒了
