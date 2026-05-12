@@ -6,6 +6,7 @@ license = "AGPL-3.0-or-later"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.14.3",
     "httpx>=0.28.1",
     "orjson>=3.11.9",
     "requests>=2.33.1",
