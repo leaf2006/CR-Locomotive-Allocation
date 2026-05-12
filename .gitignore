@@ -10,3 +10,5 @@ backend/__pycache__/fetch.cpython-312.pyc
 backend/__pycache__/index_fetch.cpython-312.pyc
 backend/__pycache__/format.cpython-312.pyc
 backend/__pycache__/utils.cpython-312.pyc
+response_debug.html
+test_result.txt
