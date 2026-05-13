@@ -9,6 +9,7 @@
 
 ## 数据源:
 - [下关站](http://www.xiaguanzhan.com)
+- [emu.passearch.info](https://emu.passearch.info/)
 
 ## 技术栈
 - **后端（数据获取）：** Python + Github Action
