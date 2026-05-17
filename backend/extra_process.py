@@ -32,3 +32,24 @@ def extra_process(raw_data: dict) -> dict:
             result[key] = list(items)
 
     return result
+def compare_and_add_proid(emu_xiaguan_compare: dict, raw_data: dict) -> dict:
+    """把下关站获取的对应动车组车号pro_id合并到raw_data中
+
+    用emu_xiaguan_compare中所有大类里小类的"id"去比对raw_data中的"id"，
+    匹配到的就将emu_xiaguan_compare里的"pro_id"赋值给raw_data中的对应项。
+    """
+    # 构建 id -> pro_id 查找表
+    id_to_pro_id: dict[str, str] = {}
+    for items in emu_xiaguan_compare.values():
+        for item in items:
+            if "id" in item and "pro_id" in item:
+                id_to_pro_id[item["id"]] = item["pro_id"]
+
+    # 遍历 raw_data，匹配并赋值 pro_id
+    for items in raw_data.values():
+        for item in items:
+            if item.get("id") in id_to_pro_id:
+                item["pro_id"] = id_to_pro_id[item["id"]]
+
+    return raw_data
+

@@ -7,7 +7,7 @@ from utils import utils
 
 def format_data(response_text :str,fetch_status :str, raw_result :list):
     """初步获取页面的主页信息，不包括制造商与设计时速，存入dict中"""
-    is_xiaguanzhan = True
+    status = "normal_xiaguan"
     if fetch_status == "normal_fetch":
         normal_page_match = re.findall(r'<a class="jytb" href="ProView\.asp\?ProId=(\d+)" target="_blank">([^<]+)</a>', response_text)
         page_match = [(pid, text) for pid, text in normal_page_match if any('\u4e00' <= c <= '\u9fff' for c in text)]
@@ -15,7 +15,7 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
         special_page_match = re.findall(r'<td height="33"><div align="center"><span class="bottombr"><a href="ProView\.asp\?ProId=(\d+)" target="_blank">([^<]+)</a></span></div></td>', response_text)
         page_match = [(pid, text) for pid, text in special_page_match if any('\u4e00' <= c <= '\u9fff' for c in text)]
     elif fetch_status == "emu_normal_fetch":
-        is_xiaguanzhan = False
+        status = "emu"
         soup = BeautifulSoup(response_text, "html.parser") # 使用beautifulsoup便于分析
         emu_entries = []
         detail_link_re = re.compile(r"emu_detail\.php\?keyword=")
@@ -47,9 +47,13 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
                 "manufacturer": manufacturer,
                 "note": note,
             })
+    elif fetch_status == "emu_normal_fetch_xiaguan":
+        status = "emu_xiaguan"
+        special_page_match = re.findall(r'<td height="\d+"><div align="center"><span class="bottombr"><a href="ProView\d*\.asp\?ProId=(\d+)" target="_blank">([^<]+)</a></span></div></td>', response_text)
+        page_match = [(pid, text) for pid, text in special_page_match if any('\u4e00' <= c <= '\u9fff' for c in text)]        
 
     # print(page_match)
-    if is_xiaguanzhan == True:
+    if status == "normal_xiaguan":
         for detail in page_match:
             pro_id = detail[0]
             raw_train_detail = detail[1]
@@ -73,8 +77,8 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
                 # "manufacturer": "",
                 # "design_speed": ""
             })
-            print(f"[INFO]{train_series_number}已录入，配属：{train_allocation} PRO ID：{pro_id}")
-    else:
+            print(f"[INFO] {train_series_number}已录入，配属：{train_allocation} PRO ID：{pro_id}")
+    elif status == "emu":
         for entry in emu_entries:
             train_series = entry["keyword"].rsplit('-', 1)[0]
             if entry['bureau'] == "" and entry['department'] == "":
@@ -88,7 +92,19 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
                 "note": entry["note"],
                 "pro_id": ""
             })
-            print(f"[INFO]{entry["keyword"]}已录入，配属：{allocation}")
+            print(f"[INFO] {entry["keyword"]}已录入，配属：{allocation}")
+    elif status == "emu_xiaguan": # 这里的raw_result使用的是emu_xiaguan_result
+        for detail in page_match:
+            pro_id = detail[0]
+            raw_train_detail = detail[1]
+            train_series_number = raw_train_detail.split(' ')[0]
+            train_series = train_series_number.split('-')[0]
+
+            raw_result.setdefault(train_series, []).append({
+                "id": train_series_number,
+                "pro_id": pro_id
+            })
+            print(f"[INFO] {train_series_number}（下关站）已录入，PRO ID：{pro_id}，稍后将会与emu_normal_fetch进行比对")
 
 def get_webfetch_data(response_text :str, fetch_status :str, raw_url :str, store_dict :list, raw_result :list):
     """获取当前组的信息总量、总页数，顺便获取当页的信息"""
@@ -100,7 +116,8 @@ def get_webfetch_data(response_text :str, fetch_status :str, raw_url :str, store
     elif emu_page_match:
         total_page = emu_page_match.group(1)
     else:
-        total_page = "1"
+        total_page = "1" # 这种情况下，当前页面只有第一页
+        
 
     if fetch_status == "normal_fetch":
         for i in range(2,int(total_page) +1):
@@ -115,8 +132,16 @@ def get_webfetch_data(response_text :str, fetch_status :str, raw_url :str, store
         format_data(response_text, "special_fetch", raw_result)   
 
     elif fetch_status == "emu_normal_fetch":
-        print(raw_url)   
         for i in range(2,int(total_page) +1):
             url = f"{raw_url}&pagenum={i}"
             store_dict['emu_normal_fetch'].append(url)
         format_data(response_text, "emu_normal_fetch", raw_result)
+    
+    elif fetch_status == "emu_normal_fetch_xiaguan":
+        # 这里的车型数据使用?Page=来进行翻页
+        models_without_query_params = ['CRH2A','CRH2B','CRH5A','CRH6F-A','CRH380B','CR300BF'] 
+        for i in range(2,int(total_page) +1):
+            use_question = any(m in raw_url for m in models_without_query_params)
+            url = f"{raw_url}?Page={i}" if use_question else f"{raw_url}&Page={i}"
+            store_dict['emu_normal_fetch_xiaguan'].append(url)
+        format_data(response_text, "emu_normal_fetch_xiaguan", raw_result) # 这里的raw_result是emu_xiaguan_compare
