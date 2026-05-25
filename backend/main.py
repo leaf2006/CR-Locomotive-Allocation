@@ -5,7 +5,7 @@ from pathlib import Path
 from utils import utils, run_with_retry
 from extra_process import extra_process, compare_and_add_proid
 async def main():
-    print("开始获取下关站所有数据...\n")
+    print("开始获取下关站所有数据...")
     current_dir = Path(__file__).parent
     fetch_path = current_dir / "fetch_url.json"
     data_dir = current_dir.parent / "data"
