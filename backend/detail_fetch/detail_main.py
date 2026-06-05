@@ -1,0 +1,142 @@
+import asyncio
+import orjson
+import httpx
+import sys
+import random
+from pathlib import Path
+from detail_format import format_data
+from utils import utils, run_with_retry
+
+URL = "http://www.xiaguanzhan.com/ProView.asp?ProId="
+async def main():
+    print("[INFO] 开始获取下关站详细数据...\n正在获取raw_result.json...")
+    current_dir = Path(__file__).parent
+    data_dir = current_dir.parent.parent / "data"
+    raw_result_path = data_dir / "raw_result.json"
+    detail_fetch_runtime_path = data_dir / "detail_fetch_runtime.json"
+    # result_path = data_dir / "result.json"
+
+    with open(raw_result_path, "rb") as raw_result_f, open(detail_fetch_runtime_path, "rb") as detail_fetch_runtime_f:
+        raw_result = orjson.loads(raw_result_f.read())
+        detail_fetch_runtime = orjson.loads(detail_fetch_runtime_f.read())
+    print("[SUCCESS] raw_result.json与detail_fetch_runtime.json已获取")
+
+    if not detail_fetch_runtime or detail_fetch_runtime['is_first_run'] == "True":
+        fetch_list = utils.split_raw_result(raw_result)
+        print(f"[SUCCESS] 分组完成，将进行{len(fetch_list)}组查询")
+        detail_fetch_runtime = {
+                "is_first_run": "False",
+                "re-run_sum": len(fetch_list),
+                "data": fetch_list
+            }
+        write_detail_fetch_runtime = orjson.dumps(
+            detail_fetch_runtime,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+        )
+        with open(detail_fetch_runtime_path, "wb") as detail_fetch_runtime_f:
+            detail_fetch_runtime_f.write(write_detail_fetch_runtime)
+
+        print("[SUCCESS] 程序即将重启，进行网络请求步骤...")
+        sys.exit(0)
+
+    else:
+        divide_data = detail_fetch_runtime['data']
+        now_count = detail_fetch_runtime.get("now_count", 0) # 如当前无now_count项则值为0
+        now_raw_result = divide_data[now_count] # 当前fetch请求所使用的数据
+
+        print(f"[INFO] 正在进行第{now_count +1}组网络请求...")
+
+        result = await run_with_retry(lambda: detail_fetch(now_raw_result))
+
+        print("[SUCCESS] 数据获取完成，正在进行写入...")
+
+        detail_fetch_runtime['now_count'] = now_count + 1
+
+        # FIX: 以合并方式写入，避免空 result 覆盖已有数据
+        print(result)
+        if result:
+            for new_item in result:
+                for train_series, raw_items in raw_result.items():
+                    id_map = {item["id"]: i for i, item in enumerate(raw_items)}
+                    if new_item["id"] in id_map:
+                        raw_items[id_map[new_item["id"]]] = new_item
+                        break  # 找到即停
+
+            write_result = orjson.dumps(
+                raw_result,
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+            )
+        else:
+            print("[INFO] 本组无需写入（result 为空）")
+            write_result = None
+
+        # FIX: 先写数据再写进度，崩溃时不会跳过未完成的组
+        if write_result:
+            with open(raw_result_path, 'wb') as result_f:
+                result_f.write(write_result)
+        write_detail_fetch_runtime = orjson.dumps(
+            detail_fetch_runtime,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+        )
+        with open(detail_fetch_runtime_path, 'wb') as detail_fetch_runtime_f:
+            detail_fetch_runtime_f.write(write_detail_fetch_runtime)
+
+        print("[SUCCESS] 当前组写入已完成！程序结束")
+    
+async def _data_processing(client: httpx.AsyncClient, url: str, item: dict, result: dict):  # FIX: 参数从 (train_info, raw_result) 改为 (item, result)
+    """执行网络请求"""
+    for retry in range(1,6):
+        # 如果请求失败，进行五次重试
+        try:
+            response = await client.post(url)
+            response.encoding = "gb2312"
+            break
+        # except httpx.ReadError:
+        except Exception as error: #TODO  短暂测试，且将冷却时间临时修改为30秒
+            print(f"[WARN] 由于{str(error)}，正在尝试重新请求，冷却30秒...")
+            await asyncio.sleep(30)
+    else:
+        print("[ERROR] 出现请求错误，程序将会异常退出！")
+        await asyncio.sleep(3)
+        sys.exit(1)
+
+    format_data(response.text, item, result)  # FIX: 传入 item 和 result，由 format_data 整合
+        
+
+async def detail_fetch(chunk: list) -> dict:  # FIX: 参数改为扁平 list，返回值改为 dict
+    """网络请求，chunk 为最多 100 个小项的扁平 list，返回以车型为 key 的 dict"""
+    group_count = 0 # 组计数，达到10自动触发random sleep，从0.1秒到0.9秒不等
+    tasks = []
+    result = []
+
+    client = httpx.AsyncClient(
+        timeout=30.0,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"}
+    )
+    try:
+        for item in chunk:  # FIX: 单层遍历扁平 list，取代原来的两层嵌套
+            pro_id = item.get('pro_id', '')
+            if pro_id == "": # 如果小项没有pro_id，则跳过
+                continue
+
+            tasks.append(_data_processing(client, f"{URL}{pro_id}", item, result))  # FIX: 传入 item 和 result
+            await asyncio.sleep(random.uniform(0.1, 0.9))
+            group_count += 1
+            if group_count >= 10:
+                await asyncio.gather(*tasks)
+                tasks.clear()
+                print("本小组完成，tasks清零")
+                group_count = 0
+                await asyncio.sleep(1)
+
+        # 处理剩余不足10个的任务
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    finally:
+        await client.aclose()
+
+    return result  # FIX: 返回以车型为 key 的 dict，而非原来的扁平 list
+
+if __name__ == "__main__":
+    asyncio.run(main())
