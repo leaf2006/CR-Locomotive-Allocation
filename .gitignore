@@ -14,3 +14,4 @@ response_debug.html
 test_result.txt
 backend/detail_fetch/detail_main.py.bak
 data/raw_result.json
+data/detail_fetch_runtime.json
