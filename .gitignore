@@ -13,3 +13,4 @@ backend/__pycache__/utils.cpython-312.pyc
 response_debug.html
 test_result.txt
 backend/detail_fetch/detail_main.py.bak
+data/raw_result.json
