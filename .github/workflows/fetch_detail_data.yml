@@ -1,0 +1,108 @@
+name: fetch_detail_data
+
+on:
+  workflow_call:
+    inputs:
+      retry:
+        description: "当前重试次数"
+        required: true
+        type: string
+      artifact_name:
+        description: "要下载的 artifact 名称"
+        required: true
+        type: string
+
+  workflow_dispatch:
+    # 允许从 API 直接触发（用于失败后自动重试）
+
+jobs:
+  detail:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. 解析输入参数（兼容 workflow_call 和 workflow_dispatch） ──
+      - name: Resolve inputs
+        id: inputs
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PAYLOAD='${{ toJSON(github.event.client_payload) }}'
+            RETRY=$(echo "$PAYLOAD" | jq -r '.retry // 0')
+            ARTIFACT=$(echo "$PAYLOAD" | jq -r '.artifact_name // "project-state-r0"')
+          else
+            RETRY="${{ inputs.retry }}"
+            ARTIFACT="${{ inputs.artifact_name }}"
+          fi
+          NEXT_RETRY=$((RETRY + 1))
+          echo "retry=$RETRY" >> "$GITHUB_OUTPUT"
+          echo "next_retry=$NEXT_RETRY" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
+          echo "next_artifact_name=project-state-r${NEXT_RETRY}" >> "$GITHUB_OUTPUT"
+
+      # ── 2. 超过最大重试次数则失败 ──
+      - name: Check retry limit
+        if: ${{ steps.inputs.outputs.retry > 10 }}
+        run: |
+          echo "::error::超过最大重试次数 (10)，请手动排查问题"
+          exit 1
+
+      # ── 3. 下载项目状态 ──
+      - name: Download project state
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.inputs.outputs.artifact_name }}
+          path: ${{ github.workspace }}
+
+      # ── 4. 配置环境 ──
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync
+
+      # ── 5. 运行 detail_main.py ──
+      - name: Run detail fetch
+        id: detail
+        working-directory: backend/detail_fetch
+        continue-on-error: true
+        run: uv run detail_main.py
+
+      # ── 6a. 成功：提交数据到仓库 ──
+      - name: Commit and push data
+        if: ${{ steps.detail.outcome == 'success' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw_result.json
+          git diff --cached --quiet || git commit -m "📝 Update detail data [automated]"
+          git push
+
+      # ── 6b. 失败：保存当前进度 ──
+      - name: Upload project state for retry
+        if: ${{ steps.detail.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.inputs.outputs.next_artifact_name }}
+          path: ${{ github.workspace }}
+          retention-days: 3
+          include-hidden-files: true
+
+      # ── 6c. 失败：重新触发本工作流 ──
+      - name: Trigger retry
+        if: ${{ steps.detail.outcome == 'failure' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const nextRetry = '${{ steps.inputs.outputs.next_retry }}';
+            const nextArtifact = '${{ steps.inputs.outputs.next_artifact_name }}';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'fetch_detail_data.yml',
+              ref: context.ref,
+              inputs: {
+                retry: nextRetry,
+                artifact_name: nextArtifact,
+              },
+            });
+            console.log(`Triggered retry #${nextRetry}`);

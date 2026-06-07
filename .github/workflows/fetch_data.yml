@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ──────────────── Job 1: 获取基础数据 ────────────────
   fetch:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -21,10 +21,19 @@ jobs:
         working-directory: backend
         run: uv run main.py
 
-      - name: Commit and push data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/raw_result.json
-          git diff --cached --quiet || git commit -m "📝 Update data [automated]"
-          git push
+      - name: Upload project state
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-state-r0
+          path: ${{ github.workspace }}
+          retention-days: 3
+          include-hidden-files: true
+
+  # ──────────────── Job 2: 获取详情数据（带自动重试） ────────────────
+  fetch_detail:
+    needs: fetch
+    uses: ./.github/workflows/fetch_detail_data.yml
+    with:
+      retry: "0"
+      artifact_name: "project-state-r0"
+    secrets: inherit
