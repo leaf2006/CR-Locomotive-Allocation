@@ -25,7 +25,8 @@ class utils:
         all_items = []
         for train_series, train_list in raw_result.items():
             for item in train_list:
-                if item['pro_id'] == "":
+                pro_id = item.get('pro_id', '') # 修改为更安全的pro_id获取方式
+                if pro_id == "":
                     continue # 如果pro_id为空，则直接跳过
                 item['train_series'] = train_series
                 all_items.append(item)
