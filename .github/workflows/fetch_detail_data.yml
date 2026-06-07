@@ -53,6 +53,9 @@ jobs:
           path: ${{ github.workspace }}
 
       # ── 4. 配置环境 ──
+      - name: Clean old venv
+        run: rm -rf backend/.venv
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
@@ -78,6 +81,10 @@ jobs:
           git push
 
       # ── 6b. 失败：保存当前进度 ──
+      - name: Remove venv before upload
+        if: ${{ steps.detail.outcome == 'failure' }}
+        run: rm -rf backend/.venv
+
       - name: Upload project state for retry
         if: ${{ steps.detail.outcome == 'failure' }}
         uses: actions/upload-artifact@v4
