@@ -18,10 +18,6 @@ on:
         description: "当前重试次数"
         required: true
         type: string
-      artifact_name:
-        description: "要下载的 artifact 名称"
-        required: true
-        type: string
 
 jobs:
   detail:
@@ -33,12 +29,9 @@ jobs:
         id: inputs
         run: |
           RETRY="${{ inputs.retry }}"
-          ARTIFACT="${{ inputs.artifact_name }}"
           NEXT_RETRY=$((RETRY + 1))
           echo "retry=$RETRY" >> "$GITHUB_OUTPUT"
           echo "next_retry=$NEXT_RETRY" >> "$GITHUB_OUTPUT"
-          echo "artifact_name=$ARTIFACT" >> "$GITHUB_OUTPUT"
-          echo "next_artifact_name=project-state-r${NEXT_RETRY}" >> "$GITHUB_OUTPUT"
 
       # ── 2. 超过最大重试次数则失败 ──
       - name: Check retry limit
@@ -47,11 +40,20 @@ jobs:
           echo "::error::超过最大重试次数 (10)，请手动排查问题"
           exit 1
 
-      # ── 3. 下载项目状态 ──
-      - name: Download project state
+      # ── 3. 恢复项目状态（cache 优先，用于重试；artifact 兜底，用于首次） ──
+      - name: Restore from cache
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}
+          key: detail-state-r${{ steps.inputs.outputs.retry }}
+          restore-keys: detail-state-
+
+      - name: Download artifact (fallback)
+        if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.inputs.outputs.artifact_name }}
+          name: ${{ inputs.artifact_name }}
           path: ${{ github.workspace }}
 
       # ── 4. 配置环境 ──
@@ -82,19 +84,17 @@ jobs:
           git diff --cached --quiet || git commit -m "📝 Update detail data [automated]"
           git push
 
-      # ── 6b. 失败：保存当前进度 ──
-      - name: Remove venv before upload
+      # ── 6b. 失败：保存当前进度到 cache（仓库级别共享，重试可用） ──
+      - name: Remove venv before cache
         if: ${{ steps.detail.outcome == 'failure' }}
         run: rm -rf backend/.venv
 
-      - name: Upload project state for retry
+      - name: Save project state for retry
         if: ${{ steps.detail.outcome == 'failure' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/cache/save@v4
         with:
-          name: ${{ steps.inputs.outputs.next_artifact_name }}
           path: ${{ github.workspace }}
-          retention-days: 3
-          include-hidden-files: true
+          key: detail-state-r${{ steps.inputs.outputs.next_retry }}
 
       # ── 6c. 失败：重新触发本工作流 ──
       - name: Trigger retry
@@ -103,7 +103,6 @@ jobs:
         with:
           script: |
             const nextRetry = '${{ steps.inputs.outputs.next_retry }}';
-            const nextArtifact = '${{ steps.inputs.outputs.next_artifact_name }}';
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -111,7 +110,6 @@ jobs:
               ref: context.ref,
               inputs: {
                 retry: nextRetry,
-                artifact_name: nextArtifact,
               },
             });
             console.log(`Triggered retry #${nextRetry}`);

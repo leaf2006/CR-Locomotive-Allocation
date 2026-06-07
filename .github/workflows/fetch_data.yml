@@ -21,16 +21,14 @@ jobs:
         working-directory: backend
         run: uv run main.py
 
-      - name: Remove venv before upload
+      - name: Remove venv before cache
         run: rm -rf backend/.venv
 
-      - name: Upload project state
-        uses: actions/upload-artifact@v4
+      - name: Save project state to cache
+        uses: actions/cache/save@v4
         with:
-          name: project-state-r0
           path: ${{ github.workspace }}
-          retention-days: 3
-          include-hidden-files: true
+          key: detail-state-r0
 
   # ──────────────── Job 2: 获取详情数据（带自动重试） ────────────────
   fetch_detail:
