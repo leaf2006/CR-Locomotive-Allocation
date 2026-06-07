@@ -13,25 +13,27 @@ on:
         type: string
 
   workflow_dispatch:
-    # 允许从 API 直接触发（用于失败后自动重试）
+    inputs:
+      retry:
+        description: "当前重试次数"
+        required: true
+        type: string
+      artifact_name:
+        description: "要下载的 artifact 名称"
+        required: true
+        type: string
 
 jobs:
   detail:
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. 解析输入参数（兼容 workflow_call 和 workflow_dispatch） ──
+      # ── 1. 解析输入参数 ──
       - name: Resolve inputs
         id: inputs
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            PAYLOAD='${{ toJSON(github.event.client_payload) }}'
-            RETRY=$(echo "$PAYLOAD" | jq -r '.retry // 0')
-            ARTIFACT=$(echo "$PAYLOAD" | jq -r '.artifact_name // "project-state-r0"')
-          else
-            RETRY="${{ inputs.retry }}"
-            ARTIFACT="${{ inputs.artifact_name }}"
-          fi
+          RETRY="${{ inputs.retry }}"
+          ARTIFACT="${{ inputs.artifact_name }}"
           NEXT_RETRY=$((RETRY + 1))
           echo "retry=$RETRY" >> "$GITHUB_OUTPUT"
           echo "next_retry=$NEXT_RETRY" >> "$GITHUB_OUTPUT"
