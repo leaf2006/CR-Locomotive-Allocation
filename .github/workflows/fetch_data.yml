@@ -21,13 +21,10 @@ jobs:
         working-directory: backend
         run: uv run main.py
 
-      - name: Remove venv before cache
-        run: rm -rf backend/.venv
-
-      - name: Save project state to cache
+      - name: Save data to cache
         uses: actions/cache/save@v4
         with:
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/data
           key: detail-state-r0
 
   # ──────────────── Job 2: 获取详情数据（带自动重试） ────────────────

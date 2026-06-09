@@ -33,12 +33,15 @@ jobs:
           echo "retry=$RETRY" >> "$GITHUB_OUTPUT"
           echo "next_retry=$NEXT_RETRY" >> "$GITHUB_OUTPUT"
 
-      # ── 2. 恢复项目状态（cache 优先，用于重试；artifact 兜底，用于首次） ──
-      - name: Restore from cache
+      # ── 2. 拉取最新代码（必须先于 data 恢复，否则 checkout 会覆盖 data） ──
+      - uses: actions/checkout@v4
+
+      # ── 3. 恢复 data/ 目录（cache 优先，用于重试；artifact 兜底，用于首次） ──
+      - name: Restore data from cache
         id: cache
         uses: actions/cache/restore@v4
         with:
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/data
           key: detail-state-r${{ steps.inputs.outputs.retry }}
           restore-keys: detail-state-
 
@@ -47,15 +50,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact_name }}
-          path: ${{ github.workspace }}
-
-      # ── 3. 拉取最新代码（覆盖缓存中的旧代码） ──
-      - uses: actions/checkout@v4
+          path: ${{ github.workspace }}/data
 
       # ── 4. 配置环境 ──
-      - name: Clean old venv
-        run: rm -rf backend/.venv
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
@@ -81,15 +78,11 @@ jobs:
           git push
 
       # ── 6b. 失败：保存当前进度到 cache（仓库级别共享，重试可用） ──
-      - name: Remove venv before cache
-        if: ${{ steps.detail.outcome == 'failure' }}
-        run: rm -rf backend/.venv
-
-      - name: Save project state for retry
+      - name: Save data for retry
         if: ${{ steps.detail.outcome == 'failure' }}
         uses: actions/cache/save@v4
         with:
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/data
           key: detail-state-r${{ steps.inputs.outputs.next_retry }}
 
       # ── 6c. 失败：重新触发本工作流 ──
