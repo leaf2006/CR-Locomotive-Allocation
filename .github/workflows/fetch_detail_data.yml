@@ -49,6 +49,9 @@ jobs:
           name: ${{ inputs.artifact_name }}
           path: ${{ github.workspace }}
 
+      # ── 3. 拉取最新代码（覆盖缓存中的旧代码） ──
+      - uses: actions/checkout@v4
+
       # ── 4. 配置环境 ──
       - name: Clean old venv
         run: rm -rf backend/.venv
