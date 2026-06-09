@@ -9,31 +9,36 @@ from utils import utils, run_with_retry
 
 URL = "http://www.xiaguanzhan.com/ProView.asp?ProId="
 async def main():
+
+    # 读取所有本地数据
     print("[INFO] 开始获取下关站详细数据...\n正在获取raw_result.json...")
     current_dir = Path(__file__).parent
     data_dir = current_dir.parent.parent / "data"
     raw_result_path = data_dir / "raw_result.json"
     backup_path = data_dir / "backup.json"
-    # result_path = data_dir / "result.json"
+    divide_path = data_dir / "divide.json"
 
-    with open(raw_result_path, "rb") as raw_result_f, open(backup_path, "rb") as backup_f:
+    with open(raw_result_path, "rb") as raw_result_f, open(backup_path, "rb") as backup_f, open(divide_path, "rb") as divide_f:
         raw_result = orjson.loads(raw_result_f.read())
         backup_data = orjson.loads(backup_f.read())
+        fetch_list = orjson.loads(divide_f.read())
     print("[SUCCESS] raw_result.json已获取")
 
-    detail_fetch_runtime = {}
-
-    if not detail_fetch_runtime: # 首次启动程序
+    # 首次启动程序，divide.json内无内容，则在里面写入分组后的数据
+    if not fetch_list:
+        print("[INFO] 程序为首次启动，并未将数据分组，正在进行分组...")
         fetch_list = utils.split_raw_result(raw_result)
-        print(f"[SUCCESS] 分组完成，将进行{len(fetch_list)}组查询")
-        detail_fetch_runtime = {
-                "data": fetch_list,
-                "rerun_sum": len(fetch_list)
-            }
+        write_divide = orjson.dumps(
+            fetch_list,
+            option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+        )
+        with open(divide_path, "wb") as divide_f:
+            divide_f.write(write_divide) # 写入，如果程序要重启直接用这里的
+    else:
+        print("[SUCCESS] 已有分组数据，无需重新分组")
 
-        print("[SUCCESS] 进行网络请求步骤...")
-
-    rerun_sum = detail_fetch_runtime['rerun_sum']
+    rerun_sum = len(fetch_list)
+    print(f"[SUCCESS] 分组完成，将进行{rerun_sum}组查询\n [SUCCESS] 正在进行网络请求步骤...")
     
     # 读取backup.json，如果backup内的page有值，则从那个page开始fetch
     if backup_data.get('page','') == "":
@@ -44,8 +49,7 @@ async def main():
         await asyncio.sleep(3)
 
     while count < rerun_sum:
-        divide_data = detail_fetch_runtime['data']
-        now_raw_result = divide_data[count] # 当前fetch请求所使用的数据
+        now_raw_result = fetch_list[count] # 当前fetch请求所使用的数据
 
         print(f"[INFO] 正在进行第{count +1}组网络请求...")
 
