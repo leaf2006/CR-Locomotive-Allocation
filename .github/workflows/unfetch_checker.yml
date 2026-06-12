@@ -1,0 +1,111 @@
+name: unfetch checker
+
+on:
+  workflow_dispatch:
+    inputs:
+      retry:
+        description: "当前重试次数"
+        required: true
+        type: string
+
+jobs:
+  unfetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. 解析输入参数 ──
+      - name: Resolve inputs
+        id: inputs
+        run: |
+          RETRY="${{ inputs.retry }}"
+          NEXT_RETRY=$((RETRY + 1))
+          echo "retry=$RETRY" >> "$GITHUB_OUTPUT"
+          echo "next_retry=$NEXT_RETRY" >> "$GITHUB_OUTPUT"
+
+      # ── 2. 首次运行：从 main 分支拉取代码 ──
+      - uses: actions/checkout@v4
+        if: ${{ steps.inputs.outputs.retry == '0' }}
+
+      # ── 3. 首次运行：从 main 分支获取 data/ ──
+      - name: Restore data from cache
+        if: ${{ steps.inputs.outputs.retry == '0' }}
+        id: cache-first
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ github.workspace }}/data
+          key: unfetch-state-r0
+          restore-keys: unfetch-state-
+
+      # ── 4. 重试运行：从 cache 恢复全部文件 ──
+      - name: Restore all files from cache
+        if: ${{ steps.inputs.outputs.retry != '0' }}
+        id: cache-retry
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ github.workspace }}/backend
+            ${{ github.workspace }}/data
+          key: unfetch-full-r${{ steps.inputs.outputs.retry }}
+          restore-keys: unfetch-full-
+
+      # ── 5. 配置环境 ──
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync
+
+      # ── 6. 首次运行 checker.py ──
+      - name: Run unfetch checker
+        if: ${{ steps.inputs.outputs.retry == '0' }}
+        id: checker
+        working-directory: backend/detail_fetch
+        continue-on-error: true
+        run: uv run checker.py
+
+      # ── 7. 重试时运行 detail_main.py ──
+      - name: Run detail fetch (retry)
+        if: ${{ steps.inputs.outputs.retry != '0' }}
+        id: detail
+        working-directory: backend/detail_fetch
+        continue-on-error: true
+        run: uv run detail_main.py
+
+      # ── 8a. 成功：提交数据到仓库 ──
+      - name: Commit and push data
+        if: ${{ (steps.checker.outcome == 'success') || (steps.detail.outcome == 'success') }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/raw_result.json
+          git diff --cached --quiet || git commit -m "📝 Update detail data [automated]"
+          git push
+
+      # ── 8b. 失败：保存全部文件到 cache ──
+      - name: Save all files for retry
+        if: ${{ (steps.checker.outcome == 'failure') || (steps.detail.outcome == 'failure') }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ github.workspace }}/backend
+            ${{ github.workspace }}/data
+          key: unfetch-full-r${{ steps.inputs.outputs.next_retry }}
+
+      # ── 8c. 失败：重新触发本工作流 ──
+      - name: Trigger retry
+        if: ${{ (steps.checker.outcome == 'failure') || (steps.detail.outcome == 'failure') }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const nextRetry = '${{ steps.inputs.outputs.next_retry }}';
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'unfetch_checker.yml',
+              ref: context.ref,
+              inputs: {
+                retry: nextRetry,
+              },
+            });
+            console.log(`Triggered retry #${nextRetry}`);
