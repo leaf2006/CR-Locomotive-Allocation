@@ -6,6 +6,7 @@ on:
       retry:
         description: "当前重试次数"
         required: true
+        default: "0"
         type: string
 
 jobs:
