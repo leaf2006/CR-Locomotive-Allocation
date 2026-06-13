@@ -38,7 +38,7 @@ async def main():
         print("[SUCCESS] 已有分组数据，无需重新分组")
 
     rerun_sum = len(fetch_list)
-    print(f"[SUCCESS] 分组完成，将进行{rerun_sum}组查询\n [SUCCESS] 正在进行网络请求步骤...")
+    print(f"[SUCCESS] 分组完成，将进行{rerun_sum}组查询\n [INFO] 正在进行网络请求步骤...")
     
     # 读取backup.json，如果backup内的page有值，则从那个page开始fetch
     if backup_data.get('page','') == "":
@@ -84,7 +84,55 @@ async def main():
         count += 1
         print("[SUCCESS] 当前组写入已完成！")
     
-    print("[SUCCESS] 所有组全部完成，程序结束")
+    print("[INFO] 所有组全部完成，正在检验数据完整性，并对不完整的数据进行修补...") # TODO
+    while True:
+        with open(raw_result_path, 'rb') as raw_result_f:
+            raw_result = orjson.loads(raw_result_f.read())
+        unfetch_list = utils.find_items_need_detail(raw_result)
+        if not unfetch_list:
+            print("[SUCCESS] 数据完整，程序结束")
+            break
+        else:
+            print(f"[INFO] 共有{len(unfetch_list)}项数据因异常而未进行网络请求，正在重新进行网络请求...")
+            write_divide = orjson.dumps(
+                unfetch_list,
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+            )
+            with open(divide_path, "wb") as divide_f:
+                divide_f.write(write_divide) # 如果程序重启，这一部分也能存储，最后按照正常的fetch流程来。
+            
+            rerun_sum = len(unfetch_list)
+            print(f"[INFO] 将重新进行{rerun_sum +1}组查询\n [INFO] 正在进行网络请求步骤...")
+            count = 0
+            while count < rerun_sum:
+                now_raw_result = fetch_list[count]
+                print(f"[INFO] 正在进行第{count +1}组网络请求...")
+                result = await run_with_retry(lambda: detail_fetch(now_raw_result, count))
+                print("[SUCCESS] 数据获取完成，正在进行写入...")
+                print(result)
+                if result:
+                    for new_item in result:
+                        for train_series, raw_items in raw_result.items():
+                            id_map = {item["id"]: i for i, item in enumerate(raw_items)}
+                            if new_item["id"] in id_map:
+                                raw_items[id_map[new_item["id"]]] = new_item
+                                break  # 找到即停
+
+                    write_result = orjson.dumps(
+                        raw_result,
+                        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+                    )
+                else:
+                    print("[INFO] 本组无需写入（result 为空）")
+                    write_result = None
+
+                # FIX: 先写数据再写进度，崩溃时不会跳过未完成的组
+                if write_result:
+                    with open(raw_result_path, 'wb') as result_f:
+                        result_f.write(write_result)
+
+                count += 1
+                print("[SUCCESS] 当前组写入已完成！")
     
 async def _data_processing(client: httpx.AsyncClient, url: str, item: dict, result: dict, page: int):  # FIX: 参数从 (train_info, raw_result) 改为 (item, result)
     """执行网络请求"""

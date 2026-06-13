@@ -45,6 +45,20 @@ class utils:
             raw_result[key] = list(seen.values())
         return raw_result
 
+    def find_items_need_detail(raw_result: dict) -> list:
+        """找出有pro_id但缺少photo_url、photo_date、photo_author与manufacturer的条目，按每100组分批。"""
+        needs_detail = []
+        required_fields = ["photo_url", "photo_date", "photo_author", "manufacturer"]
+
+        for _, items in raw_result.items():
+            for item in items:
+                has_pro_id = "pro_id" in item and item["pro_id"] != ""
+                if has_pro_id and all(field not in item for field in required_fields):
+                    needs_detail.append(item)
+
+        batch_size = 100
+        return [needs_detail[i:i + batch_size] for i in range(0, len(needs_detail), batch_size)]
+
 async def run_with_retry(coro_factory, *, max_retries=3, base_delay=2.0):
     """当出现网络问题时，程序自动进行三次重连"""
     for attempt in range(1, max_retries + 1):
