@@ -14,28 +14,38 @@ def format_data(response_text: str, item: dict, result: list):  # FIX: 参数从
     try:
         if locomotive_match:
             raw_data_group = locomotive_match.group(1)
-            manufacturer = re.search(r'生产厂商：(.*?)<BR>', raw_data_group).group(1)
-            design_speed = re.search(r'运行时速：(.*?)(?:<BR>|</FONT>)', raw_data_group).group(1)
-            photo_date = re.search(r'拍摄日期：(.*?)<BR>', raw_data_group).group(1)
-            photo_author = re.search(r'拍摄作者：(.+)', raw_data_group).group(1)
+            manufacturer = re.search(r'生产厂商：(.*?)<BR>', raw_data_group)
+            manufacturer = manufacturer.group(1) if manufacturer else "暂无数据"
+            design_speed = re.search(r'运行时速：(.*?)(?:<BR>|</FONT>)', raw_data_group)
+            design_speed = design_speed.group(1) if design_speed else "暂无数据"
+            photo_date = re.search(r'拍摄日期：(.*?)<BR>', raw_data_group)
+            photo_date = photo_date.group(1) if photo_date else "暂无数据"
+            photo_author = re.search(r'拍摄作者：(.+)', raw_data_group)
+            photo_author = photo_author.group(1) if photo_author else "暂无数据"
 
         elif emu_match:
             raw_data_group = emu_match.group(1)
-            design_speed = re.search(r'运行时速：(.*?)</FONT>', raw_data_group).group(1)
-            manufacturer = re.search(r'生产厂商：(.*?)<BR>', raw_data_group).group(1)
-            photo_date = re.search(r'拍摄日期：(.*?)<BR>', raw_data_group).group(1)
-            photo_author = re.search(r'拍摄作者：(.+)', raw_data_group).group(1)
+            design_speed = re.search(r'运行时速：(.*?)</FONT>', raw_data_group)
+            design_speed = design_speed.group(1) if design_speed else "暂无数据"
+            manufacturer = re.search(r'生产厂商：(.*?)<BR>', raw_data_group)
+            manufacturer = manufacturer.group(1) if manufacturer else "暂无数据"
+            photo_date = re.search(r'拍摄日期：(.*?)<BR>', raw_data_group)
+            photo_date = photo_date.group(1) if photo_date else "暂无数据"
+            photo_author = re.search(r'拍摄作者：(.+)', raw_data_group)
+            photo_author = photo_author.group(1) if photo_author else "暂无数据"
 
-        # else:
-        #     print(f"[ERROR] locomotive_match和emu_match均未匹配，id: {item['id']}")
-        #     print(f"[ERROR] response_text: {response_text}")
-        #     return
+        else:
+            manufacturer = "暂无数据"
+            design_speed = "暂无数据"
+            photo_date = "暂无数据"
+            photo_author = "暂无数据"
 
-        photo_url = re.search(r'<td width="652"><a href="(.*?)"></a>', response_text).group(1)
+        photo_url_match = re.search(r'<td width="652"><a href="(.*?)"></a>', response_text)
+        photo_url = photo_url_match.group(1) if photo_url_match else "暂无数据"
 
         # FIX: 直接更新传入的 item，取代原来按 train_series + id 查找的循环
         item["manufacturer"] = manufacturer
-        item["photo_url"] = f"http://www.xiaguanzhan.com/{photo_url}"
+        item["photo_url"] = f"http://www.xiaguanzhan.com/{photo_url}" if photo_url != "暂无数据" else "暂无数据"
         item["photo_date"] = photo_date
         item["photo_author"] = photo_author
 
@@ -47,6 +57,6 @@ def format_data(response_text: str, item: dict, result: list):  # FIX: 参数从
 
         print(f"已录入{item['id']}，生产厂商：{manufacturer}，图片链接：{photo_url}，拍摄日期：{photo_date}，拍摄作者：{photo_author}")
     except Exception as e:
-        pass
+        print(f"[ERROR] {str(e)}")
         # print(f"[ERROR] 处理{item['id']}时出错: {e}")
         # print(f"[ERROR] response_text: {response_text}")
