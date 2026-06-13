@@ -24,9 +24,10 @@ async def main():
     
     raw_result, emu_xiaguan_compare = await run_with_retry(lambda: web_fetch(store_dict, first_fetch_result, emu_xiaguan_compare))
     print("[INFO]数据获取已完成，正在进行去重...")
-    # raw_result = utils.remove_duplicate_data(raw_result)
+    raw_result = utils.remove_duplicate_data(raw_result) # 卧槽忘记加了
     raw_result = extra_process(raw_result)
     raw_result = compare_and_add_proid(emu_xiaguan_compare, raw_result)
+
     print("[INFO] 去重完成，正在进行写入...")
     write_first_fetch_result = orjson.dumps(
         raw_result,

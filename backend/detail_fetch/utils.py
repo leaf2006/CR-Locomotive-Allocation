@@ -35,14 +35,16 @@ class utils:
         return [all_items[i:i + chunk_size] for i in range(0, len(all_items), chunk_size)]
     
     def remove_duplicate_data(raw_result: dict) -> dict:
-        """删除重复数据，遍历每个机型下的列表，按 id 去重，保留后遍历到的项。"""
+        """删除重复数据，遍历每个机型下的列表，按 (id, allocation) 去重，保留首个条目。"""
         for key in raw_result:
-            seen = {}
+            seen = set()
+            deduped = []
             for item in raw_result[key]:
-                item_id = item.get("id")
-                if item_id is not None:
-                    seen[item_id] = item
-            raw_result[key] = list(seen.values())
+                pair = (item.get("id"), item.get("allocation"))
+                if pair not in seen:
+                    seen.add(pair)
+                    deduped.append(item)
+            raw_result[key] = deduped
         return raw_result
 
     def find_items_need_detail(raw_result: dict) -> list:
