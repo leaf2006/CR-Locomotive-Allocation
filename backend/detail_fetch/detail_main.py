@@ -5,6 +5,7 @@ import sys
 import random
 from pathlib import Path
 from detail_format import format_data
+from after_fetch_process import after_fetch_process
 from utils import utils, run_with_retry
 
 URL = "http://www.xiaguanzhan.com/ProView.asp?ProId="
@@ -84,7 +85,21 @@ async def main():
         count += 1
         print("[SUCCESS] 当前组写入已完成！")
 
-    print("[SUCCESS] 所有组已完成，程序结束！")    
+    print("[INFO] 所有数据处理完成，正在进行数据规范化处理...")
+    with open(raw_result_path, 'rb') as raw_result_f:
+        raw_result = orjson.loads(raw_result_f.read()) # 全部fetch完后的raw_result
+    
+    result = after_fetch_process(raw_result)
+
+    write_result = orjson.dumps(
+        result,
+        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+    )
+    if write_result:
+        with open(raw_result_path, 'wb') as result_f:
+            result_f.write(write_result)
+
+    print("[SUCCESS] 规整已完成，程序结束！")    
     
 async def _data_processing(client: httpx.AsyncClient, url: str, item: dict, result: dict, page: int):  # FIX: 参数从 (train_info, raw_result) 改为 (item, result)
     """执行网络请求"""

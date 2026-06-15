@@ -1,0 +1,33 @@
+[
+    {
+        "allocation": "金温温段",
+        "id": "DF4-9484",
+        "manufacturer": "中车资阳机车",
+        "note": "乌局乌段转配",
+        "pro_id": "",
+        "train_series": "DF4"
+    },
+    {
+        "allocation": "金台铁路",
+        "id": "HXD1D-7002",
+        "manufacturer": "中车株洲机车",
+        "note": "",
+        "pro_id": "",
+        "train_series": "HXD1D"        
+    },
+    {
+        "allocation": "金台铁路",
+        "id": "HXD1D-7003",
+        "manufacturer": "中车株洲机车",
+        "note": "",
+        "pro_id": "",
+        "train_series": "HXD1D"        
+    },
+    {
+        "allocation": "上铁机辆",
+        "id": "DF4-7740",
+        "manufacturer": "四方",
+        "note": "新长铁路转配",
+        "train_series": "DF4"
+    }
+]
