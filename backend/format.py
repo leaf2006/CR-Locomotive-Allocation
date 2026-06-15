@@ -38,7 +38,13 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
             bureau = cells[2] # 配属路局
             department = cells[3] # 所属动车所
             manufacturer = cells[4] # 生产厂家
-            note = cells[5] 
+            note = cells[5]
+
+            # 修正数据源作者留下的小巧思
+            # 这部分的正则表达式判断逻辑其实本身就有问题，但是由于我不想写正则，只能修修补补了
+            if "CR200J" in keyword or "CR2OOJ" in keyword:
+                train_no = keyword.split('-')[-1]
+                keyword = re.sub(r"[\u4e00-\u9fff\u3002\uff0c]|\uff08[^\uff08\uff09]*\uff09", "", note) + "-" +  train_no
 
             emu_entries.append({
                 "keyword": keyword,
