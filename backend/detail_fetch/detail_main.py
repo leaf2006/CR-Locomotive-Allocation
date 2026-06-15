@@ -106,14 +106,12 @@ async def _data_processing(client: httpx.AsyncClient, url: str, item: dict, resu
     for retry in range(1,6):
         # 如果请求失败或响应为空，进行五次重试
         try:
-            # response = await client.post(url)  # FIX: 改用GET，该网站是读取页面非提交数据
             response = await client.get(url)
             response.encoding = "gb2312"
             # FIX: 检测空响应，tasks清零后第一个请求概率性拿到空body(status=200但无内容)
             if not response.text.strip():
                 raise Exception(f"响应内容为空 (status={response.status_code})")
             break
-        # except httpx.ReadError:
         except Exception as error:
             cold_time = random.uniform(30.0,90.0)
             print(f"[WARN] 由于{str(error)}，正在尝试重新请求(第{retry}次)，冷却{cold_time:.1f}s...")

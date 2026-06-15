@@ -49,16 +49,8 @@ def format_data(response_text: str, item: dict, result: list):  # FIX: 参数从
         item["photo_date"] = photo_date
         item["photo_author"] = photo_author
 
-        if item['photo_url'] == "暂无数据" and item['manufacturer'] == "暂无数据" and item['photo_date'] == "暂无数据" and item['photo_author'] == "暂无数据":
-            print(response_text) # TODO 测试用代码
-        # FIX: 以 train_series 为 key 将 item 整合进 result dict
-        # if train_series not in result:
-        #     result[train_series] = []
-        # result[train_series].append(item)
         result.append(item)
 
         print(f"已录入{item['id']}，生产厂商：{manufacturer}，图片链接：{photo_url}，拍摄日期：{photo_date}，拍摄作者：{photo_author}")
     except Exception as e:
         print(f"[ERROR] {str(e)}")
-        # print(f"[ERROR] 处理{item['id']}时出错: {e}")
-        # print(f"[ERROR] response_text: {response_text}")
