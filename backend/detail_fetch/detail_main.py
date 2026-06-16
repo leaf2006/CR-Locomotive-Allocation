@@ -9,8 +9,35 @@ from after_fetch_process import after_fetch_process
 from utils import utils, run_with_retry
 
 URL = "http://www.xiaguanzhan.com/ProView.asp?ProId="
-async def main():
+async def _timeout_exit(seconds: float, progress: dict):
+    """异步计时器，到期后保存进度并强制退出程序"""
+    await asyncio.sleep(seconds)
+    print(f"[ERROR] 程序运行已超过 {seconds / 3600:.1f} 小时，正在保存进度后退出...")
+    current_dir = Path(__file__).parent
+    data_dir = current_dir.parent.parent / "data"
+    backup_path = data_dir / "backup.json"
+    backup = { "page": int(progress["page"]) }
+    write_backup = orjson.dumps(
+        backup,
+        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+    )
+    with open(backup_path, 'wb') as backup_f:
+        backup_f.write(write_backup)
+    print(f"[SUCCESS] 进度已保存（page={progress['page']}），程序退出")
+    sys.exit(1)
 
+async def main():
+    progress = {"page": 0}
+    # 启动5.5小时超时计时器
+    timeout_task = asyncio.create_task(_timeout_exit(5.5 * 3600, progress))
+
+    try:
+        await _main_logic(progress)
+    finally:
+        if not timeout_task.done():
+            timeout_task.cancel()
+
+async def _main_logic(progress: dict):
     # 读取所有本地数据
     print("[INFO] 开始获取下关站详细数据...\n正在获取raw_result.json...")
     current_dir = Path(__file__).parent
@@ -44,8 +71,10 @@ async def main():
     # 读取backup.json，如果backup内的page有值，则从那个page开始fetch
     if backup_data.get('page','') == "":
         count = 0
+        progress["page"] = 0
     else:
         count = backup_data.get('page')
+        progress["page"] = count
         print(f"[INFO] 程序将从第{count +1}次继续进行网络请求...")
         await asyncio.sleep(3)
 
@@ -83,6 +112,7 @@ async def main():
                 result_f.write(write_result)
 
         count += 1
+        progress["page"] = count
         print("[SUCCESS] 当前组写入已完成！")
 
     print("[INFO] 所有数据处理完成，正在进行数据规范化处理...")
