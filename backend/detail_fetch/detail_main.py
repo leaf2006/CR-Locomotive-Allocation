@@ -1,3 +1,4 @@
+import os
 import asyncio
 import orjson
 import httpx
@@ -24,7 +25,7 @@ async def _timeout_exit(seconds: float, progress: dict):
     with open(backup_path, 'wb') as backup_f:
         backup_f.write(write_backup)
     print(f"[SUCCESS] 进度已保存（page={progress['page']}），程序退出")
-    sys.exit(1)
+    os._exit(1)  # 绕过 asyncio 事件循环，直接终止进程
 
 async def main():
     progress = {"page": 0}
