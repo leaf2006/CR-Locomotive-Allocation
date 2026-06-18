@@ -25,7 +25,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ github.workspace }}/data
-          key: detail-state-r0
+          key: detail-state-r0-${{ github.run_id }}
 
   # ──────────────── Job 2: 获取详情数据（带自动重试） ────────────────
   fetch_detail:
