@@ -1,5 +1,6 @@
 import { ref, onMounted } from 'vue'
 import type { RawData, RawItem, TrainItem } from '@/types'
+import { IMAGE_PROXY_PREFIX } from '@/config'
 
 const rawData = ref<TrainItem[]>([])
 const models = ref<string[]>([])
@@ -10,6 +11,11 @@ const loading = ref(true)
 function normalizeField(value: string | undefined | null): string | null {
   if (value === undefined || value === null || value === '') return null
   return value
+}
+
+function proxifyImageUrl(url: string | null): string | null {
+  if (!url) return null
+  return `${IMAGE_PROXY_PREFIX}${url}`
 }
 
 function extractNumber(id: string): string {
@@ -27,7 +33,7 @@ function flattenData(data: RawData): TrainItem[] {
         number: extractNumber(item.id),
         manufacturer: normalizeField(item.manufacturer),
         allocation: normalizeField(item.allocation),
-        photoUrl: normalizeField(item.photo_url),
+        photoUrl: proxifyImageUrl(normalizeField(item.photo_url)),
         photoAuthor: normalizeField(item.photo_author),
         photoDate: normalizeField(item.photo_date),
         note: normalizeField(item.note),
