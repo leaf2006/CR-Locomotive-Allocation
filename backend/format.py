@@ -91,6 +91,9 @@ def format_data(response_text :str,fetch_status :str, raw_result :list):
                 allocation = "暂无数据"
             else:
                 allocation = f"{entry['bureau']}{entry['department']}动车所"
+                allocation = re.sub(r'集团动车所$', '集团', item['allocation'])
+
+
             raw_result.setdefault(train_series, []).append({
                 "id": entry["keyword"],
                 "allocation": allocation,
