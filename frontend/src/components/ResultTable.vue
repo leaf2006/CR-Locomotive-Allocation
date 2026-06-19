@@ -66,7 +66,7 @@ const columns: DataTableColumns<TrainItem> = [
                 lazy: true,
                 style: 'margin-top: 8px; border-radius: 4px;',
               }),
-              h('div', { style: 'margin-top: 4px; font-size: 12px; color: #999;' }, '图片来源：下关站'),
+              h('div', { style: 'margin-top: 4px; font-size: 12px; color: #999;' }, '图片来源：下关站；图片经由第三方代理，请耐心等待加载'),
             ])
           : h('div', {}, [h('strong', {}, '照片：'), h('span', { style: 'opacity: 0.5;' }, '暂无图片')]),
       ])
