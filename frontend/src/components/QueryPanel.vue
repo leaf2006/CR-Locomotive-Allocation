@@ -1,45 +1,54 @@
 <template>
   <n-card>
     <n-space vertical :size="16">
-      <n-space :size="12" align="center" wrap>
+      <n-space :size="16" align="end" wrap>
         <!-- 车型 -->
-        <n-select
-          v-model:value="query.model"
-          :options="modelOptions"
-          placeholder="输入搜索或选择车型"
-          filterable
-          clearable
-          style="width: 200px;"
-          @clear="clearModel"
-        />
+        <div class="filter-group">
+          <div class="filter-label">车型</div>
+          <n-select
+            v-model:value="query.model"
+            :options="modelOptions"
+            filterable
+            clearable
+            style="width: 200px;"
+            @clear="clearModel"
+          />
+        </div>
         <!-- 车号 -->
-        <n-input
-          v-model:value="query.number"
-          placeholder="车号，如 0001"
-          clearable
-          style="width: 160px;"
-          @clear="clearNumber"
-        />
+        <div class="filter-group">
+          <div class="filter-label">车号</div>
+          <n-input
+            v-model:value="query.number"
+            placeholder="0001"
+            clearable
+            style="width: 160px;"
+            @clear="clearNumber"
+          />
+        </div>
         <!-- 生产厂家 -->
-        <n-select
-          v-model:value="query.manufacturer"
-          :options="manufacturerOptions"
-          placeholder="输入搜索或选择厂家"
-          filterable
-          clearable
-          style="width: 200px;"
-          @clear="clearManufacturer"
-        />
+        <div class="filter-group">
+          <div class="filter-label">生产厂家</div>
+          <n-select
+            v-model:value="query.manufacturer"
+            :options="manufacturerOptions"
+            filterable
+            clearable
+            style="width: 200px;"
+            @clear="clearManufacturer"
+          />
+        </div>
         <!-- 配属 -->
-        <n-select
-          v-model:value="query.allocation"
-          :options="allocationOptions"
-          placeholder="输入搜索或选择配属"
-          filterable
-          clearable
-          style="width: 200px;"
-          @clear="clearAllocation"
-        />
+        <div class="filter-group">
+          <div class="filter-label">配属</div>
+          <n-select
+            v-model:value="query.allocation"
+            :options="allocationOptions"
+            filterable
+            clearable
+            style="width: 200px;"
+            @clear="clearAllocation"
+          />
+        </div>
         <!-- 全局清除 -->
         <n-button @click="clearAll" :disabled="!hasAnyQuery">
           清除全部
@@ -97,3 +106,17 @@ function clearManufacturer() { emit('clearManufacturer') }
 function clearAllocation() { emit('clearAllocation') }
 function clearAll() { emit('clearAll') }
 </script>
+
+<style scoped>
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: #666;
+  text-align: left;
+}
+</style>
