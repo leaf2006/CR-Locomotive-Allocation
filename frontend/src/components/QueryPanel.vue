@@ -56,6 +56,14 @@
       </n-space>
       <div style="opacity: 0.6; font-size: 13px;">
         共 {{ filteredCount }} 条结果
+        <template v-if="version">
+          &nbsp;&nbsp;版本号：<a
+            :href="'./data/raw_result.json'"
+            target="_blank"
+            rel="noopener noreferrer"
+            style="color: inherit; text-decoration: underline; text-underline-offset: 2px;"
+          >{{ version }}</a>
+        </template>
       </div>
     </n-space>
   </n-card>
@@ -76,6 +84,7 @@ const props = defineProps<{
   manufacturers: string[]
   allocations: string[]
   filteredCount: number
+  version?: string
 }>()
 
 const emit = defineEmits<{

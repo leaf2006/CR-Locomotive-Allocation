@@ -7,6 +7,7 @@ const models = ref<string[]>([])
 const manufacturers = ref<string[]>([])
 const allocations = ref<string[]>([])
 const loading = ref(true)
+const version = ref('')
 
 function normalizeField(value: string | undefined | null): string | null {
   if (value === undefined || value === null || value === '') return null
@@ -50,8 +51,11 @@ export function useData() {
       return
     }
     try {
-      const response = await fetch('./data/raw_result.json')
-      const data: RawData = await response.json()
+      const [dataResponse, versionResponse] = await Promise.all([
+        fetch('./data/raw_result.json'),
+        fetch('./data/version.txt'),
+      ])
+      const data: RawData = await dataResponse.json()
       rawData.value = flattenData(data)
       models.value = Object.keys(data).sort()
       const mfgSet = new Set<string>()
@@ -62,6 +66,9 @@ export function useData() {
       }
       manufacturers.value = [...mfgSet].sort()
       allocations.value = [...allocSet].sort()
+
+      const versionText = await versionResponse.text()
+      version.value = versionText.split(',')[0].trim()
     } catch (e) {
       console.error('Failed to load data:', e)
     } finally {
@@ -75,5 +82,6 @@ export function useData() {
     manufacturers,
     allocations,
     loading,
+    version,
   }
 }

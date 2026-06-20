@@ -7,6 +7,7 @@
         :manufacturers="manufacturers"
         :allocations="allocations"
         :filtered-count="filteredData.length"
+        :version="version"
         @clear-model="clearModel"
         @clear-number="clearNumber"
         @clear-manufacturer="clearManufacturer"
@@ -33,7 +34,7 @@ import { useData } from '@/composables/useData'
 import { useQuery } from '@/composables/useQuery'
 import { useFilter } from '@/composables/useFilter'
 
-const { rawData, models, manufacturers, allocations, loading } = useData()
+const { rawData, models, manufacturers, allocations, loading, version } = useData()
 const {
   query,
   clearModel,

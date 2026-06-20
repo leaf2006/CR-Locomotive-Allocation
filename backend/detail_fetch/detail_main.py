@@ -5,6 +5,7 @@ import httpx
 import sys
 import random
 from pathlib import Path
+from datetime import datetime
 from detail_format import format_data
 from after_fetch_process import after_fetch_process
 from utils import utils, run_with_retry
@@ -46,6 +47,7 @@ async def _main_logic(progress: dict):
     raw_result_path = data_dir / "raw_result.json"
     backup_path = data_dir / "backup.json"
     divide_path = data_dir / "divide.json"
+    version_path = data_dir / "version.txt"
 
     with open(raw_result_path, "rb") as raw_result_f, open(backup_path, "rb") as backup_f, open(divide_path, "rb") as divide_f:
         raw_result = orjson.loads(raw_result_f.read())
@@ -130,7 +132,16 @@ async def _main_logic(progress: dict):
         with open(raw_result_path, 'wb') as result_f:
             result_f.write(write_result)
 
-    print("[SUCCESS] 规整已完成，程序结束！")    
+    # 增加版本号写入
+    print("[SUCCESS] 规整已完成\n[INFO] 正在写入版本号...")
+    version = str(datetime.now().strftime("%Y%m%d"))
+    write_version = orjson.dumps(
+        version
+    )
+    with open(version_path, 'wb') as version_f:
+        version_f.write(write_version)
+    
+    print("[SUCCESS] 版本号写入完成！\n[SUCCESS] 程序结束")
     
 async def _data_processing(client: httpx.AsyncClient, url: str, item: dict, result: dict, page: int):  # FIX: 参数从 (train_info, raw_result) 改为 (item, result)
     """执行网络请求"""

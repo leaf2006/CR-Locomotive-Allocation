@@ -3,13 +3,22 @@ import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const src = resolve(__dirname, '../../data/raw_result.json')
 const destDir = resolve(__dirname, '../public/data')
-const dest = resolve(destDir, 'raw_result.json')
 
 if (!existsSync(destDir)) {
   mkdirSync(destDir, { recursive: true })
 }
 
-copyFileSync(src, dest)
-console.log('✅ data/raw_result.json → frontend/public/data/raw_result.json')
+const files = [
+  { src: '../../data/raw_result.json', name: 'raw_result.json' },
+  { src: '../../data/version.txt', name: 'version.txt' },
+]
+
+for (const file of files) {
+  const srcPath = resolve(__dirname, file.src)
+  const destPath = resolve(destDir, file.name)
+  if (existsSync(srcPath)) {
+    copyFileSync(srcPath, destPath)
+    console.log(`✅ data/${file.name} → frontend/public/data/${file.name}`)
+  }
+}
