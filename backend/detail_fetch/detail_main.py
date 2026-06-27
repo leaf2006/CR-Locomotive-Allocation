@@ -91,14 +91,15 @@ async def _main_logic(progress: dict):
         print("[SUCCESS] 数据获取完成，正在进行写入...")
 
 
-        # FIX: 以合并方式写入，避免空 result 覆盖已有数据
+        # Fix: id_map键从id改为(id, allocation)，避免同id不同配属的条目互相覆盖
         print(result)
         if result:
             for new_item in result:
                 for train_series, raw_items in raw_result.items():
-                    id_map = {item["id"]: i for i, item in enumerate(raw_items)}
-                    if new_item["id"] in id_map:
-                        raw_items[id_map[new_item["id"]]] = new_item
+                    id_map = {(item["id"], item.get("allocation", "")): i for i, item in enumerate(raw_items)}
+                    key = (new_item["id"], new_item.get("allocation", ""))
+                    if key in id_map:
+                        raw_items[id_map[key]] = new_item
                         break  # 找到即停
 
             write_result = orjson.dumps(
@@ -135,11 +136,8 @@ async def _main_logic(progress: dict):
     # 增加版本号写入
     print("[SUCCESS] 规整已完成\n[INFO] 正在写入版本号...")
     version = str(datetime.now().strftime("%Y%m%d"))
-    write_version = orjson.dumps(
-        version
-    )
-    with open(version_path, 'wb') as version_f:
-        version_f.write(write_version)
+    with open(version_path, 'w', encoding='utf-8') as version_f:
+        version_f.write(version)
     
     print("[SUCCESS] 版本号写入完成！\n[SUCCESS] 程序结束")
     
