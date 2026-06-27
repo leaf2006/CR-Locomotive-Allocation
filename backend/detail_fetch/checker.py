@@ -12,14 +12,14 @@ async def main():
 
     with open(raw_result_path, 'rb') as raw_result_f:
         raw_result = orjson.loads(raw_result_f.read())    
-    raw_result = utils.remove_duplicate_data(raw_result)
-    write_raw_result = orjson.dumps(
-        raw_result,
-        option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
-    )
-    with open(raw_result_path, "wb") as raw_result_f:
-        raw_result_f.write(write_raw_result)
-    print("[SUCCESS] 去重完成") # 这个程序一般不用，用的时候数据多少有点问题。所以这里再加一个去重
+    # raw_result = utils.remove_duplicate_data(raw_result)
+    # write_raw_result = orjson.dumps(
+    #     raw_result,
+    #     option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
+    # )
+    # with open(raw_result_path, "wb") as raw_result_f:
+    #     raw_result_f.write(write_raw_result)
+    # print("[SUCCESS] 去重完成") # 这个程序一般不用，用的时候数据多少有点问题。所以这里再加一个去重
 
 
     unfetch_list = utils.find_items_need_detail(raw_result)
