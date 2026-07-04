@@ -5,17 +5,18 @@
       :data="data"
       :bordered="false"
       :single-line="false"
-      :pagination="{ pageSize: 50 }"
+      :pagination="pagination"
       :row-key="(row: TrainItem) => row.id + '-' + (row.allocation || '-')"
       :expanded-row-keys="expandedKeys"
       @update:expanded-row-keys="onExpandedKeysChange"
+      @update:page="onPageChange"
       striped
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
+import { h, ref, computed, watch } from 'vue'
 import { NDataTable, NButton, NImage } from 'naive-ui'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import type { TrainItem } from '@/types'
@@ -30,9 +31,24 @@ const emit = defineEmits<{
 }>()
 
 const expandedKeys = ref<DataTableRowKey[]>([])
+const currentPage = ref(1)
+
+// 监听 data 变化（筛选条件变更），将页码复位到第 1 页
+watch(() => props.data, () => {
+  currentPage.value = 1
+})
 
 function onExpandedKeysChange(keys: DataTableRowKey[]) {
   expandedKeys.value = keys
+}
+
+const pagination = computed(() => ({
+  pageSize: 50,
+  page: currentPage.value,
+}))
+
+function onPageChange(page: number) {
+  currentPage.value = page
 }
 
 function formatPhotoDate(date: string | null): string {
