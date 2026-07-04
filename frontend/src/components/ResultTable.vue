@@ -1,15 +1,17 @@
 <template>
-  <n-data-table
-    :columns="columns"
-    :data="data"
-    :bordered="false"
-    :single-line="false"
-    :pagination="{ pageSize: 50 }"
-    :row-key="(row: TrainItem) => row.id + '-' + (row.allocation || '-')"
-    :expanded-row-keys="expandedKeys"
-    @update:expanded-row-keys="onExpandedKeysChange"
-    striped
-  />
+  <div class="table-scroll-wrapper">
+    <n-data-table
+      :columns="columns"
+      :data="data"
+      :bordered="false"
+      :single-line="false"
+      :pagination="{ pageSize: 50 }"
+      :row-key="(row: TrainItem) => row.id + '-' + (row.allocation || '-')"
+      :expanded-row-keys="expandedKeys"
+      @update:expanded-row-keys="onExpandedKeysChange"
+      striped
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -75,13 +77,15 @@ const columns: DataTableColumns<TrainItem> = [
   {
     title: '编号',
     key: 'id',
-    width: 160,
+    width: 130,
+    minWidth: 100,
     ellipsis: { tooltip: true },
   },
   {
     title: '车型',
     key: 'model',
-    width: 120,
+    width: 100,
+    minWidth: 80,
     render(row) {
       return h(
         NButton,
@@ -97,7 +101,8 @@ const columns: DataTableColumns<TrainItem> = [
   {
     title: '配属',
     key: 'allocation',
-    width: 180,
+    width: 150,
+    minWidth: 100,
     ellipsis: { tooltip: true },
     render(row) {
       if (!row.allocation) return h('span', { style: 'opacity: 0.5;' }, '-')
@@ -115,7 +120,8 @@ const columns: DataTableColumns<TrainItem> = [
   {
     title: '生产厂家',
     key: 'manufacturer',
-    width: 160,
+    width: 140,
+    minWidth: 90,
     ellipsis: { tooltip: true },
     render(row) {
       return h('span', {}, row.manufacturer || '-')
@@ -123,3 +129,16 @@ const columns: DataTableColumns<TrainItem> = [
   },
 ]
 </script>
+
+<style scoped>
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 确保 n-data-table 至少容纳所有列宽总和，触发水平滚动 */
+.table-scroll-wrapper :deep(.n-data-table) {
+  min-width: 600px;
+}
+</style>

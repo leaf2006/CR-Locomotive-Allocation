@@ -2,7 +2,7 @@
   <n-config-provider :theme="currentTheme" :theme-overrides="themeOverrides">
     <n-layout>
       <HeaderNav />
-      <n-layout-content content-style="padding: 24px; max-width: 1400px; margin: 0 auto;">
+      <n-layout-content content-style="min-width: 0; width: 100%; padding: var(--content-padding, 24px); max-width: 1400px; margin: 0 auto;">
         <router-view />
       </n-layout-content>
       <n-layout-footer bordered class="footer-bar">
@@ -59,6 +59,10 @@ body {
   flex-direction: column;
 }
 
+:root {
+  --content-padding: 24px;
+}
+
 .n-layout {
   flex: 1;
   display: flex;
@@ -67,6 +71,13 @@ body {
 
 .n-layout-content {
   flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  :root {
+    --content-padding: 12px;
+  }
 }
 
 .footer-bar {
