@@ -5,7 +5,7 @@
     :bordered="false"
     :single-line="false"
     :pagination="{ pageSize: 50 }"
-    :row-key="(row: TrainItem) => row.id"
+    :row-key="(row: TrainItem) => row.id + '-' + (row.allocation || '-')"
     :expanded-row-keys="expandedKeys"
     @update:expanded-row-keys="onExpandedKeysChange"
     striped
