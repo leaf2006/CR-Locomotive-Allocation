@@ -47805,7 +47805,7 @@
       "train_series": "DF12"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF12-0068",
       "manufacturer": "中车资阳机车",
       "photo_author": "你�h江南烟胧雨",
@@ -56037,7 +56037,7 @@
       "train_series": "DF4"
     },
     {
-      "allocation": "漯阜铁路",
+      "allocation": "武局漯阜",
       "id": "DF4-1604",
       "manufacturer": "中车大连机车",
       "photo_author": "被迫复兴",
@@ -66417,7 +66417,7 @@
       "train_series": "DF4"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF4-7718",
       "manufacturer": "中车大连机车",
       "photo_author": "被迫复兴",
@@ -66427,7 +66427,7 @@
       "train_series": "DF4"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF4-7719",
       "manufacturer": "中车大连机车",
       "photo_author": "被迫复兴",
@@ -66701,6 +66701,7 @@
       "id": "DF4-7740",
       "manufacturer": "四方",
       "note": "新长铁路转配",
+      "pro_id": "",
       "train_series": "DF4"
     },
     {
@@ -77234,7 +77235,7 @@
       "train_series": "DF4C"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF4C-4301",
       "manufacturer": "中车大连机车",
       "photo_author": "小白T430",
@@ -77274,7 +77275,7 @@
       "train_series": "DF4C"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF4C-4318",
       "manufacturer": "中车资阳机车",
       "photo_author": "郑局江段",
@@ -77954,7 +77955,7 @@
       "train_series": "DF4C"
     },
     {
-      "allocation": "漯阜铁路",
+      "allocation": "武局漯阜",
       "id": "DF4C-5008",
       "manufacturer": "中车资阳机车",
       "photo_author": "李",
@@ -78274,7 +78275,7 @@
       "train_series": "DF4C"
     },
     {
-      "allocation": "漯阜公司",
+      "allocation": "武局漯阜",
       "id": "DF4C-5253",
       "manufacturer": "中车资阳机车",
       "photo_author": "小白T430",
