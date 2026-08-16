@@ -2,6 +2,9 @@ name: fetch_data
 
 on:
   workflow_dispatch:
+  schedule:
+    # 每月10日 00:00 UTC 自动触发
+    - cron: "0 0 10 * *"
 
 jobs:
   # ──────────────── Job 1: 获取基础数据 ────────────────
