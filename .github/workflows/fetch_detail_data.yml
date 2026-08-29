@@ -97,7 +97,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f data/raw_result.json
+          git add -f data/raw_result.json data/version.txt
           git diff --cached --quiet || git commit -m "📝 Update detail data [automated]"
           git push
 
