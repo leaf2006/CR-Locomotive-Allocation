@@ -19,8 +19,18 @@ import { NConfigProvider, NLayout, NLayoutContent, NLayoutFooter, darkTheme } fr
 import type { GlobalThemeOverrides } from 'naive-ui'
 import HeaderNav from './components/HeaderNav.vue'
 
-const isDark = ref(false)
+// 默认跟随浏览器深浅色偏好；无法获取时（不支持 matchMedia 的环境）默认亮色
+const prefersDark = typeof window.matchMedia === 'function'
+  ? window.matchMedia('(prefers-color-scheme: dark)')
+  : null
+
+const isDark = ref(prefersDark?.matches ?? false)
 provide('isDark', isDark)
+
+// 浏览器/系统切换深浅色时实时跟随
+prefersDark?.addEventListener('change', (e) => {
+  isDark.value = e.matches
+})
 
 const currentTheme = computed(() => isDark.value ? darkTheme : null)
 
@@ -33,8 +43,6 @@ const themeOverrides = computed<GlobalThemeOverrides>(() => ({
 
 // 同步 body 背景色
 watch(isDark, (val) => {
-  document.body.style.background = val ? '#1e1e1e' : '#f5f5f5'
-  document.body.style.color = val ? '#ddd' : '#333'
   document.body.classList.toggle('dark', val)
 }, { immediate: true })
 </script>
@@ -51,6 +59,11 @@ body {
   background: #f5f5f5;
   color: #333;
   transition: background 0.3s, color 0.3s;
+}
+
+body.dark {
+  background: #1e1e1e;
+  color: #ddd;
 }
 
 #app {

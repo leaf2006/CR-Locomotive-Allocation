@@ -7,6 +7,12 @@
     <title>轨上名录 - CR-Locomotive-Allocation</title>
   </head>
   <body>
+    <script>
+      // 在 Vue 挂载前同步系统深色模式，避免深色用户首屏白底闪烁
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark')
+      }
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
